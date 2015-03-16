@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+
+<header>
+<meta http-equiv="Content-Type" content="text/html; charset=Windows-1251">
+<title>Поиск недвижимости</title>
+<style>
+	#div_glob{border: 1px solid black; width: 250px; height: 160px;}
+	#div_buy_button{width: 100px; height: 10px; padding: 10px 10px 10px 10px; float: left;}
+	#div_sell_button{width: 100px; height: 10px; padding: 10px 10px 10px 120px;}
+	#div_select_field{width: 210px; height: 10px; padding: 10px 10px 10px 10px;}
+	#div_square_text{width: 100px; height: 10px; padding: 10px 10px 10px 10px; float: left;}
+	#div_square_field{width: 100px; height: 10px; padding: 10px 10px 10px 120px;}
+	#div_price_text{width: 100px; height: 10px; padding: 10px 10px 10px 10px; float: left;}
+	#div_price_field{width: 100px; height: 10px; padding: 10px 10px 10px 120px;}
+	#div_search_button{width: 100px; height: 10px; padding: 10px 10px 10px 10px;}
+	#search_results{padding: 10px 10px 10px 0px;}
+	
+	table, td, th {border: 1px solid black; border-collapse: collapse;}
+	th, td {width: 100px; padding: 5px;}
+	td {text-align: center;}
+	
+	select {width: 210px;}
+	.button_class{width: 100px;}
+	.field_class{width: 95px;}
+</style>
+</header>
+
+<body>
+	<script src="jquery.js"></script>
+
+	<form id="searchform" method="post">
+		<div id="div_glob">
+			<div id="div_buy_button">
+				<input type="submit" value="Купить" class="button_class" id="buy_button"/>
+			</div>
+			
+			<div id="div_sell_button">
+				<input type="submit" value="Продать" class="button_class" id="sell_button"/>
+			</div>
+			
+			<div id="div_select_field">
+				<select name="select_field" size=1 id="select_field">
+				</select>
+			</div>
+			
+			<script type="text/javascript">
+				function addOption (oListbox, text, value, isDefaultSelected, isSelected) {
+				  var oOption = document.createElement("option");
+				  oOption.appendChild(document.createTextNode(text));
+				  oOption.setAttribute("value", value);
+
+				  if (isDefaultSelected) oOption.defaultSelected = true;
+				  else if (isSelected) oOption.selected = true;
+
+				  oListbox.appendChild(oOption);
+				}
+				
+				$.ajax({
+	                type: "POST",
+	                url: "find.php",
+					data_type: 'json',
+					cache: false,
+	                data: {"select":true},
+	                beforeSend: function(html) {
+	               },
+	               success: function(data){
+						var arr = JSON.parse(data);
+						var objSel = document.getElementById("select_field");
+												
+						for (var i=0; i<arr.length; i++) {				
+							addOption(objSel, arr[i]['name_city'], arr[i]['id']);
+						}
+	              }
+	            });
+			</script>
+
+			<div id="div_square_text">Площадь:</div>
+			<div id="div_square_field">
+				<input type="text" name="square_field" class="field_class" id="square_field"/>
+			</div>
+
+			<div id="div_price_text">Цена:</div>
+			<div id="div_price_field">
+				<input type="text" name="price_field" class="field_class" id="price_field"/>
+			</div>
+
+			<div id="div_search_button">
+				<input type="submit" value="Найти" class="button_class" id="search_button"/>
+			</div>
+
+		</div>
+		<div id="search_results">
+		</div>
+	</form>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			
+			var buy_button = false;
+			var sell_button = false;
+			
+			$("#buy_button").click(function() {
+				buy_button = !buy_button;
+				
+				$("#square_field").attr("readonly",buy_button);
+				$("#square_field").val('');
+				
+				if (buy_button) {
+					$("#buy_button").css("background", "#99CCCC");
+					$("#square_field").css("background", "#CCCCCC");
+				}
+				else {
+					$("#buy_button").css("background", "");
+					$("#square_field").css("background", "");
+				}
+				
+				return false;
+			});
+			
+			$("#sell_button").click(function() {
+				sell_button = !sell_button;
+				
+				$("#price_field").attr("readonly",sell_button);
+				$("#price_field").val('');
+				
+				if (sell_button) {
+					$("#sell_button").css("background", "#99CCCC");
+					$("#price_field").css("background", "#CCCCCC");
+				}
+				else {
+					$("#sell_button").css("background", "");
+					$("#price_field").css("background", "");
+				}
+				
+				return false;
+			});
+		 
+			$("#search_button").click(function() {
+				
+				var id_city = 0;
+				var objSel = document.getElementById("select_field");
+				if (objSel.selectedIndex != -1) {
+				  id_city = objSel.options[objSel.selectedIndex].value;
+				}
+				
+				var json_str = '{"id_city":'+id_city;
+				
+				if (buy_button && !sell_button) {
+					json_str += ',"id_trans_type": 1';
+				}
+				else if (!buy_button && sell_button) {
+					json_str += ',"id_trans_type": 2';
+				}
+				
+				var square = $("#square_field").val();
+				if (square > 0) {
+					json_str += ',"square":'+square;
+				}
+				
+				var price = $("#price_field").val();
+				if (price > 0) {
+					json_str += ',"price":'+price;
+				}
+				
+				json_str += '}';
+					
+				$.ajax({
+					type: "POST",
+					url: "find.php",
+					data_type: 'json',
+					cache: false,
+					data: {"search":json_str},
+					beforeSend: function(html) {
+						$("#search_results").html('');
+						$("#search_results").show();
+				   },
+				   success: function(data){
+						$("#search_results").show();
+						$("#search_results").append(data);
+						var arr = JSON.parse(data);
+						
+						var myTable = "<table border=\"1\">";
+						myTable += "<thead><tr><th>Тип</th><th>Город</th><th>Цена, UAH</th><th>Площадь, S</th></tr></thead>";
+						myTable += "<tbody>";
+						
+						for (var i=0; i<arr.length; i++) {							
+							myTable += "<tr><td>" + arr[i]['name_trans_type'] + "</td><td>" + arr[i]['name_city'] + "</td><td>" + arr[i]['price'] + "</td><td>" + arr[i]['square'] + "</td></tr>";
+						}
+  
+						myTable += "</tbody>";
+						myTable += "</table>";
+ 
+						document.getElementById("search_results").innerHTML = myTable;
+				  }
+				});
+					
+				return false;
+			});
+		});
+		
+	</script>
+	
+</body>
+	
+</html>
